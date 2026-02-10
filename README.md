@@ -13,17 +13,6 @@ A customizable and minimalist Android home screen widget that displays your upco
 - **Configurable Updates:** Choose update intervals from 1 hour to once a day (at midnight).
 - **Readability:** Subtle text shadowing ensures visibility on any wallpaper.
 
-## Screenshots
-
-*(You can add screenshots here once you have uploaded them to GitHub)*
-
-## Installation
-
-1. Download the latest `app-debug.apk` from the releases or build it from source.
-2. Install the APK on your Android device.
-3. Open the app to grant calendar permissions and customize your settings.
-4. Add the "CalendarWidget" to your home screen via the standard Android widget menu.
-
 ## Permissions
 
 - **READ_CALENDAR:** Required to fetch and display your calendar events.
