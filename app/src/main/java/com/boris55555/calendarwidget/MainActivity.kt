@@ -1,15 +1,12 @@
 package com.boris55555.calendarwidget
 
 import android.Manifest
-import android.app.AlarmManager
-import android.app.PendingIntent
 import android.appwidget.AppWidgetManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Bundle
-import android.os.SystemClock
 import android.provider.CalendarContract
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -25,7 +22,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.core.content.ContextCompat
 import com.boris55555.calendarwidget.ui.theme.CalendarWidgetTheme
-import java.util.Calendar
 
 class MainActivity : ComponentActivity() {
 
@@ -72,7 +68,7 @@ class MainActivity : ComponentActivity() {
                         putString("calendar_package", selectedCalendarPackage)
                         apply()
                     }
-                    scheduleWidgetUpdate(this@MainActivity, updateInterval)
+                    AlarmUtils.scheduleWidgetUpdate(this@MainActivity, updateInterval)
                     updateWidget()
                 }
 
@@ -195,42 +191,6 @@ class MainActivity : ComponentActivity() {
             intent.putExtra(AppWidgetManager.EXTRA_APPWIDGET_IDS, ids)
             sendBroadcast(intent)
             AppWidgetManager.getInstance(this).notifyAppWidgetViewDataChanged(ids, R.id.calendar_listview)
-        }
-    }
-
-    private fun scheduleWidgetUpdate(context: Context, intervalMillis: Long) {
-        val alarmManager = context.getSystemService(Context.ALARM_SERVICE) as AlarmManager
-        val intent = Intent(context, CalendarWidgetProvider::class.java).apply {
-            action = "com.boris55555.calendarwidget.ACTION_AUTO_UPDATE"
-        }
-        val pendingIntent = PendingIntent.getBroadcast(
-            context, 0, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-
-        alarmManager.cancel(pendingIntent)
-
-        if (intervalMillis == 86400000L) {
-            val calendar = Calendar.getInstance().apply {
-                timeInMillis = System.currentTimeMillis()
-                add(Calendar.DAY_OF_YEAR, 1)
-                set(Calendar.HOUR_OF_DAY, 0)
-                set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 0)
-                set(Calendar.MILLISECOND, 0)
-            }
-            alarmManager.setInexactRepeating(
-                AlarmManager.RTC_WAKEUP,
-                calendar.timeInMillis,
-                AlarmManager.INTERVAL_DAY,
-                pendingIntent
-            )
-        } else {
-            alarmManager.setInexactRepeating(
-                AlarmManager.ELAPSED_REALTIME_WAKEUP,
-                SystemClock.elapsedRealtime() + intervalMillis,
-                intervalMillis,
-                pendingIntent
-            )
         }
     }
 }
