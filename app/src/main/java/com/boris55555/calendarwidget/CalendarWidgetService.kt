@@ -67,7 +67,6 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
         cursor?.use {
             val beginIndex = it.getColumnIndex(CalendarContract.Instances.BEGIN)
             val titleIndex = it.getColumnIndex(CalendarContract.Instances.TITLE)
-            // Muutettu muotoilu: dd.MM (esim. 01.02)
             val dayFormat = SimpleDateFormat("dd.MM", Locale.getDefault())
 
             var count = 0
@@ -98,9 +97,10 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
             views.setTextColor(R.id.event_title, eventColor)
             views.setTextViewTextSize(R.id.event_title, TypedValue.COMPLEX_UNIT_SP, itemFontSize)
             
+            // Asetetaan fill-in intent koko rivin juurelle (widget_item_root)
+            // Tämä varmistaa, ettei klikkaus "huku" tekstien väliin.
             val fillInIntent = Intent()
-            views.setOnClickFillInIntent(R.id.event_title, fillInIntent)
-            views.setOnClickFillInIntent(R.id.event_day, fillInIntent)
+            views.setOnClickFillInIntent(R.id.widget_item_root, fillInIntent)
         }
         return views
     }
