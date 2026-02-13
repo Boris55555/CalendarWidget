@@ -24,11 +24,10 @@ object AlarmUtils {
                 add(Calendar.DAY_OF_YEAR, 1)
                 set(Calendar.HOUR_OF_DAY, 0)
                 set(Calendar.MINUTE, 0)
-                set(Calendar.SECOND, 1) // 1 second past midnight
+                set(Calendar.SECOND, 5) // 5 seconds margin to ensure date change
                 set(Calendar.MILLISECOND, 0)
             }
             
-            // Use exact alarm for midnight reset to ensure it happens on time
             try {
                 alarmManager.setExactAndAllowWhileIdle(
                     AlarmManager.RTC_WAKEUP,
@@ -36,7 +35,6 @@ object AlarmUtils {
                     pendingIntent
                 )
             } catch (e: SecurityException) {
-                // Fallback to inexact if exact alarm permission is missing
                 alarmManager.set(
                     AlarmManager.RTC_WAKEUP,
                     calendar.timeInMillis,
@@ -44,8 +42,8 @@ object AlarmUtils {
                 )
             }
         } else {
-            // Periodic updates (hourly etc)
-            alarmManager.setInexactRepeating(
+            // Periodic updates - using setRepeating for better reliability when screen is off
+            alarmManager.setRepeating(
                 AlarmManager.ELAPSED_REALTIME_WAKEUP,
                 SystemClock.elapsedRealtime() + intervalMillis,
                 intervalMillis,
