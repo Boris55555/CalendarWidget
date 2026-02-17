@@ -7,6 +7,7 @@ build/
 
 # Local configuration files (contains local paths and API keys)
 local.properties
+keystore.properties
 
 # Android Studio / IntelliJ IDEA files
 .idea/workspace.xml
