@@ -54,6 +54,7 @@ class MainActivity : ComponentActivity() {
                 var updateInterval by remember { mutableLongStateOf(sharedPref.getLong("update_interval", 86400000L)) }
                 var eventCount by remember { mutableIntStateOf(sharedPref.getInt("event_count", 5)) }
                 var selectedCalendarPackage by remember { mutableStateOf(sharedPref.getString("calendar_package", "") ?: "") }
+                var eInkMode by remember { mutableStateOf(sharedPref.getBoolean("eink_mode", false)) }
 
                 val isGranted by isPermissionGrantedState
                 val calendarApps = remember { getCalendarApps() }
@@ -66,6 +67,7 @@ class MainActivity : ComponentActivity() {
                         putLong("update_interval", updateInterval)
                         putInt("event_count", eventCount)
                         putString("calendar_package", selectedCalendarPackage)
+                        putBoolean("eink_mode", eInkMode)
                         apply()
                     }
                     AlarmUtils.scheduleWidgetUpdate(this@MainActivity, updateInterval)
@@ -92,16 +94,38 @@ class MainActivity : ComponentActivity() {
 
                         Spacer(modifier = Modifier.height(24.dp))
 
-                        Text(text = "Colors", style = MaterialTheme.typography.titleLarge)
-                        Spacer(modifier = Modifier.height(8.dp))
-                        ColorInput(label = "Date Color (Hex)", value = dayColor) { 
-                            dayColor = it
-                            if (isValidHex(it)) autoSave()
+                        // E-Ink Mode Toggle
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            verticalAlignment = Alignment.CenterVertically,
+                            horizontalArrangement = Arrangement.SpaceBetween
+                        ) {
+                            Column {
+                                Text(text = "E-Ink Mode", style = MaterialTheme.typography.titleLarge)
+                                Text(text = "Pure black text, no shadows", style = MaterialTheme.typography.bodySmall)
+                            }
+                            Switch(
+                                checked = eInkMode,
+                                onCheckedChange = { 
+                                    eInkMode = it
+                                    autoSave()
+                                }
+                            )
                         }
-                        Spacer(modifier = Modifier.height(8.dp))
-                        ColorInput(label = "Event Text Color (Hex)", value = eventColor) { 
-                            eventColor = it
-                            if (isValidHex(it)) autoSave()
+
+                        if (!eInkMode) {
+                            Spacer(modifier = Modifier.height(24.dp))
+                            Text(text = "Colors", style = MaterialTheme.typography.titleLarge)
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ColorInput(label = "Date Color (Hex)", value = dayColor) { 
+                                dayColor = it
+                                if (isValidHex(it)) autoSave()
+                            }
+                            Spacer(modifier = Modifier.height(8.dp))
+                            ColorInput(label = "Event Text Color (Hex)", value = eventColor) { 
+                                eventColor = it
+                                if (isValidHex(it)) autoSave()
+                            }
                         }
                         
                         Spacer(modifier = Modifier.height(24.dp))

@@ -23,6 +23,7 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
     private var dayColor: Int = Color.BLACK
     private var eventColor: Int = Color.DKGRAY
     private var itemFontSize: Float = 14f
+    private var eInkMode: Boolean = false
 
     data class CalendarEvent(val day: String, val title: String)
 
@@ -30,16 +31,21 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
 
     override fun onDataSetChanged() {
         val sharedPref = context.getSharedPreferences("WidgetPrefs", Context.MODE_PRIVATE)
-        val dayColorHex = sharedPref.getString("day_color", "#000000") ?: "#000000"
-        val eventColorHex = sharedPref.getString("event_color", "#696969") ?: "#696969"
+        eInkMode = sharedPref.getBoolean("eink_mode", false)
         itemFontSize = sharedPref.getFloat("item_size", 14f)
         val eventCountLimit = sharedPref.getInt("event_count", 5)
         
-        dayColor = try { Color.parseColor(dayColorHex) } catch (e: Exception) { Color.BLACK }
-        eventColor = try { Color.parseColor(eventColorHex) } catch (e: Exception) { Color.DKGRAY }
+        if (eInkMode) {
+            dayColor = Color.BLACK
+            eventColor = Color.BLACK
+        } else {
+            val dayColorHex = sharedPref.getString("day_color", "#000000") ?: "#000000"
+            val eventColorHex = sharedPref.getString("event_color", "#696969") ?: "#696969"
+            dayColor = try { Color.parseColor(dayColorHex) } catch (e: Exception) { Color.BLACK }
+            eventColor = try { Color.parseColor(eventColorHex) } catch (e: Exception) { Color.DKGRAY }
+        }
 
         val events = mutableListOf<CalendarEvent>()
-        
         val now = Calendar.getInstance()
         val startMillis = now.timeInMillis
 
@@ -86,7 +92,10 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
     override fun getCount(): Int = eventList.size
 
     override fun getViewAt(position: Int): RemoteViews {
-        val views = RemoteViews(context.packageName, R.layout.widget_item)
+        // Valitaan asettelu E-Ink-tilan mukaan
+        val layoutId = if (eInkMode) R.layout.widget_item_eink else R.layout.widget_item
+        val views = RemoteViews(context.packageName, layoutId)
+        
         if (position < eventList.size) {
             val event = eventList[position]
             views.setTextViewText(R.id.event_day, event.day)
@@ -97,8 +106,6 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
             views.setTextColor(R.id.event_title, eventColor)
             views.setTextViewTextSize(R.id.event_title, TypedValue.COMPLEX_UNIT_SP, itemFontSize)
             
-            // Asetetaan fill-in intent koko rivin juurelle (widget_item_root)
-            // Tämä varmistaa, ettei klikkaus "huku" tekstien väliin.
             val fillInIntent = Intent()
             views.setOnClickFillInIntent(R.id.widget_item_root, fillInIntent)
         }
@@ -106,7 +113,7 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
     }
 
     override fun getLoadingView(): RemoteViews? = null
-    override fun getViewTypeCount(): Int = 1
+    override fun getViewTypeCount(): Int = 2 // Nyt meillä on kaksi eri asettelua
     override fun getItemId(position: Int): Long = position.toLong()
     override fun hasStableIds(): Boolean = true
 }
