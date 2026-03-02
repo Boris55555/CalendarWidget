@@ -19,13 +19,11 @@ class CalendarWidgetService : RemoteViewsService() {
 
 class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsService.RemoteViewsFactory {
 
-    private var eventList: List<CalendarEvent> = listOf()
+    private var eventList: List<Pair<String, List<String>>> = listOf()
     private var dayColor: Int = Color.BLACK
     private var eventColor: Int = Color.DKGRAY
     private var itemFontSize: Float = 14f
     private var eInkMode: Boolean = false
-
-    data class CalendarEvent(val day: String, val title: String)
 
     override fun onCreate() {}
 
@@ -33,7 +31,7 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
         val sharedPref = context.getSharedPreferences("WidgetPrefs", Context.MODE_PRIVATE)
         eInkMode = sharedPref.getBoolean("eink_mode", false)
         itemFontSize = sharedPref.getFloat("item_size", 14f)
-        val eventCountLimit = sharedPref.getInt("event_count", 5)
+        val dayCountLimit = sharedPref.getInt("event_count", 5)
         
         if (eInkMode) {
             dayColor = Color.BLACK
@@ -45,7 +43,9 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
             eventColor = try { Color.parseColor(eventColorHex) } catch (e: Exception) { Color.DKGRAY }
         }
 
-        val events = mutableListOf<CalendarEvent>()
+        val eventsByDay = mutableMapOf<String, MutableList<String>>()
+        val dayOrder = mutableListOf<String>()
+
         val now = Calendar.getInstance()
         val startMillis = now.timeInMillis
 
@@ -75,16 +75,21 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
             val titleIndex = it.getColumnIndex(CalendarContract.Instances.TITLE)
             val dayFormat = SimpleDateFormat("dd.MM", Locale.getDefault())
 
-            var count = 0
-            while (it.moveToNext() && count < eventCountLimit) {
+            while (it.moveToNext()) {
                 val begin = it.getLong(beginIndex)
                 val title = it.getString(titleIndex)
                 val day = dayFormat.format(Date(begin))
-                events.add(CalendarEvent(day, title))
-                count++
+                
+                if (!eventsByDay.containsKey(day)) {
+                    if (eventsByDay.size >= dayCountLimit) {
+                        break
+                    }
+                    dayOrder.add(day)
+                }
+                eventsByDay.getOrPut(day) { mutableListOf() }.add(title)
             }
         }
-        eventList = events
+        eventList = dayOrder.map { it to (eventsByDay[it] ?: emptyList()) }
     }
 
     override fun onDestroy() {}
@@ -97,12 +102,13 @@ class CalendarRemoteViewsFactory(private val context: Context) : RemoteViewsServ
         val views = RemoteViews(context.packageName, layoutId)
         
         if (position < eventList.size) {
-            val event = eventList[position]
-            views.setTextViewText(R.id.event_day, event.day)
+            val (day, titles) = eventList[position]
+            views.setTextViewText(R.id.event_day, day)
             views.setTextColor(R.id.event_day, dayColor)
             views.setTextViewTextSize(R.id.event_day, TypedValue.COMPLEX_UNIT_SP, itemFontSize)
             
-            views.setTextViewText(R.id.event_title, event.title)
+            val titlesText = titles.joinToString("\n")
+            views.setTextViewText(R.id.event_title, titlesText)
             views.setTextColor(R.id.event_title, eventColor)
             views.setTextViewTextSize(R.id.event_title, TypedValue.COMPLEX_UNIT_SP, itemFontSize)
             

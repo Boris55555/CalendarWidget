@@ -42,3 +42,5 @@ Thumbs.db
 
 # Reference project (PolyCal is another repo, better to ignore it in your own)
 /PolyCal/
+release-key.jks
+keystore.properties
